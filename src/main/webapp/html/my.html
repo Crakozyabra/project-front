@@ -1,11 +1,378 @@
+<!DOCTYPE html>
 <html>
-<head>
-    <title>RPG</title>
-    <script src=https://code.jquery.com/jquery-3.6.0.min.js></script>
-    <link href="/css/my.css" rel="stylesheet">
-</head>
-<body>
-<h1>RPG admin panel</h1>
+    <head>
+        <title>RPG</title>
+        <script src=https://code.jquery.com/jquery-3.6.0.min.js></script>
+        <script type="text/javascript">
 
-</body>
+            var options = {
+            year: 'numeric', month: 'numeric', day: 'numeric'
+        };
+
+            var initial = function (numPage = 0, del = false) {
+
+                var select = document.getElementById("myselect");
+                var selectedVal = select.options[select.selectedIndex].value;
+                if (del) {
+                    numPage = 0;
+                    selectedVal = 3;
+                }
+
+                $.ajax({
+                    type: 'get',
+                    url: "/rest/players?pageNumber="+numPage+"&pageSize=" + selectedVal,
+                    dataType: 'json',
+                    success: function (data) {
+                        //alert("success accounts");
+                        $("#table-body tr").remove();
+                        for (let i = 0; i < data.length; i++) {
+                            $("#table-body").append(
+                                "<tr>\n" +
+                                    "<td>" + data[i].id + "</td>\n" +
+                                    "<td id='name"+data[i].id+"'>" + data[i].name + "</td>\n" +
+                                    "<td id='title"+data[i].id+"'>" + data[i].title + "</td>\n" +
+                                    "<td id='race"+data[i].id+"'>" + data[i].race + "</td>\n" +
+                                    "<td id='profession"+data[i].id+"'>" + data[i].profession + "</td>\n" +
+                                    "<td id='level"+data[i].id+"'>" + data[i].level + "</td>\n" +
+                                    "<td id='date"+data[i].id+"'>" + new Date(data[i].birthday).toLocaleDateString('en', options) + "</td>\n" +
+                                    "<td id='banned"+data[i].id+"'>" + data[i].banned + "</td>\n" +
+                                    "<td>" +
+                                        "<img id='imgEdit"+data[i].id+"' onclick='edit("+data[i].id+")' src='/img/edit.png'/>" +
+                                        "<img hidden id='imgSave"+data[i].id+"' onClick='save("+data[i].id+")' src='/img/save.png'/>" +
+                                    "</td>\n" +
+                                    "<td><img id='imgBucket"+data[i].id+"' onclick='del("+data[i].id+")' src='/img/delete.png'/></td>"+
+                                "</tr>"
+                            );
+                        }
+                    }
+                });
+
+
+                $.ajax({
+                    type: 'get',
+                    url: "/rest/players/count",
+                    dataType: 'json',
+                    success: function (data) {
+                        //alert("success pagination");
+                        var pagesCount = Math.ceil(data / selectedVal);
+                        $("#pagination button").remove();
+                        for (let i = 0; i < pagesCount; i++) {
+                            var element = document.createElement("button");
+                            element.value = i;
+                            element.innerText = i;
+                            if (numPage === i) {
+                                element.style = "color:red;"
+                            }
+                            element.addEventListener("click", function (){
+                                initial(i);
+                            }, false);
+                            $("#pagination").append(element);
+                        }
+                    }
+                });
+            }
+
+
+
+            $("document").ready(
+                function () {
+                    initial();
+
+                    var select = document.getElementById("myselect");
+                    select.addEventListener("change", function (){
+                        initial();
+                    }, false);
+
+                }
+            );
+
+
+
+            <!-- обработка нажатия кнопки delete -->
+            var del = function (id = -1){
+                $.ajax({
+                    type: 'delete',
+                    url: "/rest/players/"+id,
+                });
+                let select = document.getElementById("myselect");
+                select.value = 3;
+                initial(0,true);
+            }
+
+
+            <!-- обработка нажатия кнопки edit -->
+            var edit = function (id = -1){
+                let imgEditElem = document.getElementById("imgEdit"+id);
+                imgEditElem.hidden = true;
+                let imgSaveElem = document.getElementById("imgSave"+id);
+                imgSaveElem.hidden = false;
+
+                let imgBucket = document.getElementById("imgBucket"+id);
+                imgBucket.hidden = true;
+
+                let name = document.getElementById("name"+id);
+                let nameValue = name.innerHTML;
+                name.innerHTML = "<input type='text' id='nameInput"+id+"' value='"+nameValue+"'>"
+
+                let title = document.getElementById("title"+id);
+                let titleValue = title.innerHTML;
+                title.innerHTML = "<input type='text' id='titleInput"+id+"' value='"+titleValue+"'>"
+
+                let race = document.getElementById("race"+id);
+                race.innerHTML = "<select id = 'raceSelect"+id+"'>" +
+                    "<option value='HUMAN'>HUMAN</option>" +
+                    "<option value='DWARF'>DWARF</option>" +
+                    "<option selected value='ELF'>ELF</option>"+
+                    "<option value='GIANT'>GIANT</option>" +
+                    "<option value='ORC'>ORC</option>" +
+                    "<option value='TROLL'>TROLL</option>" +
+                    "<option value='HOBBIT'>HOBBIT</option>" +
+                "</select>";
+
+                let profession = document.getElementById("profession"+id);
+                profession.innerHTML = "<select id='professionSelect"+id+"'>" +
+                    "<option value='WARRIOR'>WARRIOR</option>"+
+                    "<option selected value='ROGUE'>ROGUE</option>"+
+                    "<option value='SORCERER'>SORCERER</option>" +
+                    "<option value='CLERIC'>CLERIC</option>" +
+                    "<option value='PALADIN'>PALADIN</option>" +
+                    "<option value='WARLOCK'>WARLOCK</option>" +
+                    "<option value='DRUID'>DRUID</option>" +
+                "</select>";
+
+                let banned = document.getElementById("banned"+id);
+                banned.innerHTML = "<select id='bannedSelect"+id+"'>" +
+                    "<option selected value='false'>false</option>"+
+                    "<option value='true'>true</option>"+
+                "</select>";
+            }
+
+
+            <!-- обработка нажатия кнопки save для update существующего аккаунта -->
+            var save = function (id = -1){
+                let nameInputElem = document.getElementById("nameInput"+id);
+                let titleInputElem = document.getElementById("titleInput"+id);
+                let raceSelectElem = document.getElementById("raceSelect"+id);
+                let professionSelectElem = document.getElementById("professionSelect"+id);
+                let bannedSelectElem = document.getElementById("bannedSelect"+id);
+
+                let name = nameInputElem.value;
+                let title = titleInputElem.value;
+                let selectedRace = raceSelectElem.options[raceSelectElem.selectedIndex].value;
+                let selectedProfession = professionSelectElem.options[professionSelectElem.selectedIndex].value;
+                let selectedBanned = bannedSelectElem.options[bannedSelectElem.selectedIndex].value;
+
+                let url = "/rest/players/"+id;
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    contentType: "application/json;charset=UTF-8",
+                    async: false,
+                    dataType: 'json',
+                    data:JSON.stringify({
+                        "name":name,
+                        "title":title,
+                        "race":selectedRace,
+                        "profession":selectedProfession,
+                        "banned":selectedBanned
+                    }),
+
+                    success: function () {
+                        let nameTd = document.getElementById("name"+id);
+                        let titleTd = document.getElementById("title"+id);
+                        let raceTd = document.getElementById("race"+id);
+                        let professionTd = document.getElementById("profession"+id);
+                        let bannedTd = document.getElementById("banned"+id);
+
+                        nameTd.innerHTML = name;
+                        titleTd.innerHTML = title;
+                        raceTd.innerHTML = selectedRace;
+                        professionTd.innerHTML = selectedProfession;
+                        bannedTd.innerHTML = selectedBanned;
+
+                        let imgBucket = document.getElementById("imgBucket"+id);
+                        imgBucket.hidden = false;
+                        let imgEditElem = document.getElementById("imgEdit"+id);
+                        imgEditElem.hidden = false;
+                        let imgSaveElem = document.getElementById("imgSave"+id);
+                        imgSaveElem.hidden = true;
+                    }
+                });
+            }
+
+
+            <!-- обработка нажатия кнопки saveNewAccount для create аккаунта -->
+            var saveNewAccount = function (){
+                alert("fff");
+                let nameInputElem = document.getElementById("nameForNewAccount");
+                let titleInputElem = document.getElementById("titleForNewAccount");
+                let raceInputElem = document.getElementById("raceForNewAccount");
+                let professionInputElem = document.getElementById("professionForNewAccount");
+                let birthdayInputElem = document.getElementById("birthdayForNewAccount");
+                let bannedInputElem = document.getElementById("bannedForNewAccount");
+                let levelInputElem = document.getElementById("levelForNewAccount");
+
+                let name = nameInputElem.value();
+                let title = titleInputElem.value();
+                let race = raceInputElem.value();
+                let profession = professionInputElem.value();
+                let birthday = birthdayInputElem.value();
+                let banned = bannedInputElem.value();
+                let level = levelInputElem.value();
+
+                if (name.length > 12 || name==="" || title.length > 30) return;
+
+                $.ajax({
+                    url: "/rest/players/",
+                    type: 'POST',
+                    contentType: "application/json;charset=UTF-8",
+                    async: false,
+                    dataType: 'json',
+                    data:JSON.stringify({
+                        "name":name,
+                        "title":title,
+                        "race":race,
+                        "profession":profession,
+                        "birthday":birthday,
+                        "banned":banned,
+                        "level":level
+                    }),
+
+                    error: function (jqXHR, exception) {
+                        alert("404 error");
+                    },
+
+                    success: function (data) {
+                        nameInputElem.value = "";
+                        titleInputElem.value = "";
+                    }
+                });
+            }
+        </script>
+        <link href="/css/my.css" rel="stylesheet" type="text/css">
+</head>
+
+    <body>
+        <h3>Existing accounts:</h3>
+        <div style="float: left">Count per page: </div>
+        <select id = "myselect">
+       <option selected value="3">3</option>
+       <option value="4">4</option>
+       <option value="5">5</option>
+       <option value="6">6</option>
+       <option value="7">7</option>
+       <option value="8">8</option>
+       <option value="9">9</option>
+       <option value="10">10</option>
+       <option value="11">11</option>
+       <option value="12">12</option>
+       <option value="13">13</option>
+       <option value="14">14</option>
+       <option value="15">15</option>
+       <option value="16">16</option>
+       <option value="17">17</option>
+       <option value="18">18</option>
+       <option value="19">19</option>
+       <option value="20">20</option>
+   </select>
+        <table id="accounts-table" class="with-border">
+            <thead>
+                <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Title</th>
+                <th>Race</th>
+                <th>Profession</th>
+                <th>Level</th>
+                <th>Birthday</th>
+                <th>Banned</th>
+                <th>Edit</th>
+                <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+
+
+        <div id="pagination">
+            <div style="float: left">Pages: </div>
+        </div>
+
+        <br/>
+
+        <div>
+            <h3>Create new account:</h3>
+
+            <table class="non-border">
+                <thead></thead>
+                <tbody>
+                    <tr>
+                        <td><label for="nameForNewAccount">Name</label></td>
+                        <td><input id="nameForNewAccount" type='text'/></td>
+                    </tr>
+
+                    <tr>
+                        <td><label for="titleForNewAccount">Title</label></td>
+                        <td><input id="titleForNewAccount" type='text'/></td>
+                    </tr>
+
+                    <tr>
+                        <td><label for="raceForNewAccount">Race</label></td>
+                        <td>
+                            <select id = 'raceForNewAccount'>
+                                <option value='HUMAN'>HUMAN</option>
+                                <option value='DWARF'>DWARF</option>
+                                <option selected value='ELF'>ELF</option>
+                                <option value='GIANT'>GIANT</option>
+                                <option value='ORC'>ORC</option>
+                                <option value='TROLL'>TROLL</option>
+                                <option value='HOBBIT'>HOBBIT</option>
+                            </select>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><label for="professionForNewAccount">Profession</label></td>
+                        <td>
+                            <select id='professionForNewAccount'>
+                                <option value='WARRIOR'>WARRIOR</option>
+                                <option selected value='ROGUE'>ROGUE</option>
+                                <option value='SORCERER'>SORCERER</option>
+                                <option value='CLERIC'>CLERIC</option>
+                                <option value='PALADIN'>PALADIN</option>
+                                <option value='WARLOCK'>WARLOCK</option>
+                                <option value='DRUID'>DRUID</option>
+                            </select>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><label for="levelForNewAccount">Level</label></td>
+                        <td><input id="levelForNewAccount" type='number' min="0" max="100"/></td>
+                    </tr>
+
+                    <tr>
+                        <td><label for="birthdayForNewAccount">Birthday</label></td>
+                        <td><input id="birthdayForNewAccount" type='date'/></td>
+                    </tr>
+
+                    <tr>
+                        <td><label for="bannedForNewAccount">Banned</label></td>
+                        <td>
+                            <select id='bannedForNewAccount'>
+                                <option selected value='false'>false</option>
+                                <option value='true'>true</option>
+                            </select>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td></td>
+                        <td><img id='saveNewAccount' onClick='saveNewAccount()' src='/img/save.png'/></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </body>
 </html>

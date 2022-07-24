@@ -1,0 +1,28 @@
+.with-border th, .with-border td {
+    border: 1px solid;
+}
+
+
+img {
+    cursor: pointer;
+}
+
+
+.align-left{
+    text-align: left;
+}
+
+
+.align-right{
+    text-align: right;
+}
+
+
+select{
+    width: 100%;
+}
+
+
+input[type="date"]{
+    width: 100%;
+}
