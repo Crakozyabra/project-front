@@ -204,27 +204,29 @@
 
             <!-- обработка нажатия кнопки saveNewAccount для create аккаунта -->
             var saveNewAccount = function (){
-                alert("fff");
+
                 let nameInputElem = document.getElementById("nameForNewAccount");
                 let titleInputElem = document.getElementById("titleForNewAccount");
-                let raceInputElem = document.getElementById("raceForNewAccount");
-                let professionInputElem = document.getElementById("professionForNewAccount");
+                let raceSelectElem = document.getElementById("raceForNewAccount");
+                let professionSelectElem = document.getElementById("professionForNewAccount");
                 let birthdayInputElem = document.getElementById("birthdayForNewAccount");
-                let bannedInputElem = document.getElementById("bannedForNewAccount");
+                let bannedSelectElem = document.getElementById("bannedForNewAccount");
                 let levelInputElem = document.getElementById("levelForNewAccount");
+                alert("fff");
+                let name = nameInputElem.value;
+                let title = titleInputElem.value;
+                let race = raceSelectElem.options[raceSelectElem.selectedIndex].value;
+                let profession = professionSelectElem.options[professionSelectElem.selectedIndex].value;
+                let birthday = birthdayInputElem.value;
+                let banned = bannedSelectElem.options[bannedSelectElem.selectedIndex].value;
+                let level = levelInputElem.value;
 
-                let name = nameInputElem.value();
-                let title = titleInputElem.value();
-                let race = raceInputElem.value();
-                let profession = professionInputElem.value();
-                let birthday = birthdayInputElem.value();
-                let banned = bannedInputElem.value();
-                let level = levelInputElem.value();
-
+                //var str = name+"|"+title+"|"+race+"|"+profession+"|"+banned+"|"+level;
+                alert(str);
                 if (name.length > 12 || name==="" || title.length > 30) return;
 
                 $.ajax({
-                    url: "/rest/players/",
+                    url: "/rest/players",
                     type: 'POST',
                     contentType: "application/json;charset=UTF-8",
                     async: false,
@@ -234,7 +236,7 @@
                         "title":title,
                         "race":race,
                         "profession":profession,
-                        "birthday":birthday,
+                        "birthday":new Date(birthday).getTime(),
                         "banned":banned,
                         "level":level
                     }),
@@ -244,8 +246,11 @@
                     },
 
                     success: function (data) {
+                        //alert("success");
                         nameInputElem.value = "";
                         titleInputElem.value = "";
+                        levelInputElem.value = "";
+                        initial();
                     }
                 });
             }
